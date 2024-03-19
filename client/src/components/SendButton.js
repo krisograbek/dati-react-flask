@@ -8,7 +8,7 @@ const StyledSendButton = styled.button`
   font-size: 24px;
   cursor: pointer;
   &:hover {
-    color: #0056b3;
+    color: ${props => props.theme.colors.primaryDark};
   }
   &:disabled {
     color: #cccccc;

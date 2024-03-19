@@ -8,7 +8,7 @@ const MessageItem = styled.div`
   max-width: 80%;
   align-self: ${({ isUser }) => (isUser ? 'flex-end' : 'flex-start')};
   background-color: ${({ isUser }) => (isUser ? '#d8eefe' : '#f1f1f1')};
-  color: ${({ isUser }) => (isUser ? '#004085' : '#495057')};
+  color: ${({ isUser, theme }) => (isUser ? theme.colors.primaryDark : '#495057')};
 
   ${({ isUser }) =>
     isUser &&

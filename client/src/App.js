@@ -1,6 +1,8 @@
 // src/App.js
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+
+import theme from './styles/theme';
 import GlobalStyle from './styles/GlobalStyle';
 import ChatContainer from './components/styled/ChatContainer';
 import MessageList from './components/styled/MessageList';
@@ -9,11 +11,14 @@ import InputArea from './components/styled/InputArea';
 import StatusBar from './components/styled/StatusBar';
 import FileUploadButton from './components/FileUploadButton';
 import SendButton from './components/SendButton';
+import Header from './components/styled/Header';
+import Tooltip from './components/Tooltip';
+
 import { ClipLoader } from 'react-spinners';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPaperPlane } from '@fortawesome/free-solid-svg-icons';
-import Header from './components/styled/Header';
-import Tooltip from './components/Tooltip';
+
+import { ThemeProvider } from 'styled-components';
 
 function App() {
   const [messages, setMessages] = useState([]);
@@ -58,7 +63,7 @@ function App() {
   };
 
   return (
-    <>
+    <ThemeProvider theme={theme}>
       <GlobalStyle />
       <ChatContainer>
         <Header>Query Assistant</Header>
@@ -89,7 +94,7 @@ function App() {
           {!isFileUploaded && 'Please upload a CSV file to use the chat.'}
         </StatusBar>
       </ChatContainer >
-    </>
+    </ThemeProvider>
   );
 }
 

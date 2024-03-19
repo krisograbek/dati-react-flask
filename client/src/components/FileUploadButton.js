@@ -10,8 +10,9 @@ const StyledFileUploadButton = styled.label`
   cursor: pointer;
   font-size: 20px;
   margin-left: 10px;
-  color: #004085;
-
+  &:hover {
+    color: ${props => props.theme.colors.primaryDark};
+  }
   input[type='file'] {
     display: none;
   }
