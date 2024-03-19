@@ -1,0 +1,7 @@
+flask
+pandas
+langchain
+Flask-Cors
+langchain-openai
+python-dotenv
+sqlalchemy

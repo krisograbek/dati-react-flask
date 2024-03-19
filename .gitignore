@@ -1,0 +1,10 @@
+# node_modules are in the client's .gitignore
+
+venv
+__pycache__
+
+.env
+*.db
+
+# initial front-end
+frontend
