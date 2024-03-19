@@ -8,7 +8,7 @@ import ChatContainer from './components/styled/ChatContainer';
 import MessageList from './components/styled/MessageList';
 import MessageItem from './components/styled/MessageItem';
 import InputArea from './components/styled/InputArea';
-import StatusBar from './components/styled/StatusBar';
+import StatusBar from './components/StatusBar';
 import FileUploadButton from './components/FileUploadButton';
 import SendButton from './components/SendButton';
 import Header from './components/styled/Header';
@@ -28,7 +28,7 @@ function App() {
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    // Fetch existing messages if needed
+    fetchMessages();
   }, []);
 
   const handleSendMessage = async () => {
@@ -47,20 +47,33 @@ function App() {
     setIsLoading(false);
   };
 
+  const fetchMessages = async () => {
+    try {
+      const response = await axios.get('http://localhost:5000/get-messages');
+      setMessages(response.data.messages);
+    } catch (error) {
+      console.error('Error fetching messages:', error);
+    }
+  };
+
   const handleFileUpload = async (event) => {
     setUploadingFile(true);
     const file = event.target.files[0];
     const formData = new FormData();
     formData.append('csv_file', file);
     try {
-      await axios.post('http://localhost:5000/upload-csv', formData);
-      setIsFileUploaded(true);
+      const response = await axios.post('http://localhost:5000/upload-csv', formData);
+      if (response.status === 200) {
+        setMessages([]); // Clear messages in the front-end state
+        setIsFileUploaded(true);
+      }
     } catch (error) {
       console.error('Error uploading file:', error);
     } finally {
       setUploadingFile(false);
     }
   };
+
 
   return (
     <ThemeProvider theme={theme}>

@@ -17,13 +17,14 @@ messages = []  # In-memory storage for messages
 
 @app.route("/upload-csv", methods=["POST"])
 def upload_csv():
-    global pipeline
+    global pipeline, messages
     if "csv_file" not in request.files:
         return jsonify({"error": "No file part"}), 400
     file = request.files["csv_file"]
     if file.filename == "":
         return jsonify({"error": "No selected file"}), 400
     if file and file.filename.endswith(".csv"):
+        messages = []
         filename = secure_filename(file.filename)
         filepath = os.path.join("/tmp", filename)
         file.save(filepath)
