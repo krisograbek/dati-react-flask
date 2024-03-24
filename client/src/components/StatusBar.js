@@ -9,8 +9,8 @@ const StyledStatusBar = styled.div`
   display: ${(props) => (props.isFileUploaded ? 'none' : 'block')};
 `;
 
-const StatusBar = ({ isFileUploaded, children }) => (
-  <StyledStatusBar isFileUploaded={isFileUploaded}>
+const StatusBar = ({ children }) => (
+  <StyledStatusBar>
     {children}
   </StyledStatusBar>
 )

@@ -40,6 +40,7 @@ function App() {
         user_prompt: inputValue
       });
       setMessages(response.data.messages);
+      console.log(messages)
       setInputValue('');
     } catch (error) {
       console.error('Error sending message:', error);
