@@ -4,6 +4,7 @@ import { ClipLoader } from 'react-spinners';
 
 import StyledSendButton from './styled/StyledSendButton';
 
+
 const SendButton = ({ handleSendMessage, isDisabled, isLoading }) => (
   <StyledSendButton onClick={handleSendMessage} disabled={isDisabled}>
     {isLoading ? <ClipLoader size={24} /> : <FontAwesomeIcon icon={faPaperPlane} />}

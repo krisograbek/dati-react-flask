@@ -14,8 +14,12 @@ import SendButton from './components/SendButton';
 import Header from './components/styled/Header';
 import Tooltip from './components/Tooltip';
 
+import { useAudioRecorder } from 'react-audio-voice-recorder'
 
 import { ThemeProvider } from 'styled-components';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faCircleStop, faMicrophone, faStop } from '@fortawesome/free-solid-svg-icons';
+import StyledSendButton from './components/styled/StyledSendButton';
 
 function App() {
   const [messages, setMessages] = useState([]);
@@ -24,9 +28,21 @@ function App() {
   const [uploadingFile, setUploadingFile] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
+  //react audio voice recorder hook
+  const {
+    startRecording,
+    stopRecording,
+    recordingBlob,
+    isRecording
+  } = useAudioRecorder();
+
   useEffect(() => {
     fetchMessages();
   }, []);
+
+  const handleStopRecording = () => {
+    stopRecording();
+  };
 
   const handleSendMessage = async () => {
     if (inputValue.trim() === '' || isLoading) return; // Prevent sending empty messages
@@ -99,6 +115,9 @@ function App() {
           />
 
           <SendButton handleSendMessage={handleSendMessage} isDisabled={!isFileUploaded || isLoading} isLoading={isLoading} />
+          <StyledSendButton onClick={isRecording ? handleStopRecording : startRecording} disabled={!isFileUploaded || isLoading}>
+            <FontAwesomeIcon icon={isRecording ? faCircleStop : faMicrophone} />
+          </StyledSendButton>
         </div>
         <StatusBar isFileUploaded={isFileUploaded}>
           {!isFileUploaded && 'Please upload a CSV file to use the chat.'}
