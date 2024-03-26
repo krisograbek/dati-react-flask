@@ -1,3 +1,6 @@
+import { faPaperPlane } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { ClipLoader } from 'react-spinners';
 import styled from 'styled-components';
 
 const StyledSendButton = styled.button`
@@ -16,9 +19,9 @@ const StyledSendButton = styled.button`
   }
 `;
 
-const SendButton = ({ handleSendMessage, isDisabled, children }) => (
+const SendButton = ({ handleSendMessage, isDisabled, isLoading }) => (
   <StyledSendButton onClick={handleSendMessage} disabled={isDisabled}>
-    {children}
+    {isLoading ? <ClipLoader size={24} /> : <FontAwesomeIcon icon={faPaperPlane} />}
   </StyledSendButton>
 )
 

@@ -14,9 +14,6 @@ import SendButton from './components/SendButton';
 import Header from './components/styled/Header';
 import Tooltip from './components/Tooltip';
 
-import { ClipLoader } from 'react-spinners';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPaperPlane } from '@fortawesome/free-solid-svg-icons';
 
 import { ThemeProvider } from 'styled-components';
 
@@ -100,9 +97,8 @@ function App() {
             disabled={!isFileUploaded}
             placeholder={isFileUploaded ? 'Ask me about your data...' : ''}
           />
-          <SendButton handleSendMessage={handleSendMessage} isDisabled={!isFileUploaded || isLoading} >
-            {isLoading ? <ClipLoader size={24} /> : <FontAwesomeIcon icon={faPaperPlane} />}
-          </SendButton>
+
+          <SendButton handleSendMessage={handleSendMessage} isDisabled={!isFileUploaded || isLoading} isLoading={isLoading} />
         </div>
         <StatusBar isFileUploaded={isFileUploaded}>
           {!isFileUploaded && 'Please upload a CSV file to use the chat.'}
