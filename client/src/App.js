@@ -1,5 +1,5 @@
 // src/App.js
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 
 import theme from './styles/theme';
@@ -18,7 +18,7 @@ import { useAudioRecorder } from 'react-audio-voice-recorder'
 
 import { ThemeProvider } from 'styled-components';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCircleStop, faMicrophone, faStop } from '@fortawesome/free-solid-svg-icons';
+import { faCircleStop, faMicrophone } from '@fortawesome/free-solid-svg-icons';
 import StyledSendButton from './components/styled/StyledSendButton';
 
 function App() {
@@ -27,6 +27,7 @@ function App() {
   const [isFileUploaded, setIsFileUploaded] = useState(false);
   const [uploadingFile, setUploadingFile] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  // const [transcribedText, setTranscribedText] = useState("")
 
   //react audio voice recorder hook
   const {
@@ -36,39 +37,54 @@ function App() {
     isRecording
   } = useAudioRecorder();
 
-  useEffect(() => {
-    fetchMessages();
-  }, []);
+  const handleSendMessage = () => {
+    sendMessage(inputValue); // Use the sendMessage for user typed input
+    setInputValue(''); // Clear the input field after sending
+  };
 
   const handleStopRecording = () => {
     stopRecording();
   };
 
-  const handleSendMessage = async () => {
-    if (inputValue.trim() === '' || isLoading) return; // Prevent sending empty messages
+  const sendMessage = useCallback(async (message) => {
+    if (!message.trim() || isLoading) return; // Prevent sending empty or non-string messages
     setIsLoading(true);
 
     try {
       const response = await axios.post('http://localhost:5000/chat', {
-        user_prompt: inputValue
+        user_prompt: message
       });
       setMessages(response.data.messages);
-      console.log(messages)
-      setInputValue('');
+      console.log(messages);
     } catch (error) {
       console.error('Error sending message:', error);
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
-  };
+  }, [isLoading]); // Dependencies
 
-  const fetchMessages = async () => {
-    try {
-      const response = await axios.get('http://localhost:5000/get-messages');
-      setMessages(response.data.messages);
-    } catch (error) {
-      console.error('Error fetching messages:', error);
+  useEffect(() => {
+    // This effect handles the transcription response and sends the transcribed text
+    if (recordingBlob) {
+      console.log('Sending audio blob to the server', recordingBlob);
+      const formData = new FormData();
+      formData.append("audio", recordingBlob, "recording.webm");
+
+      axios.post('http://localhost:5000/api/transcribe', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      }).then(response => {
+        const transcript = response.data.text; // Assuming response.data is the transcribed text
+        // setTranscribedText(transcript); // Set transcribed text
+        console.log("Got the transript:", response)
+        sendMessage(transcript); // Send transcribed text to chat
+      }).catch(error => {
+        console.error('Error sending audio to the server:', error);
+      });
     }
-  };
+  }, [recordingBlob, sendMessage]);
+
 
   const handleFileUpload = async (event) => {
     setUploadingFile(true);

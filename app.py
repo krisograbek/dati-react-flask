@@ -1,9 +1,13 @@
+import os
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from chatbot_pipeline import ChatbotPipeline
-import os
 from dotenv import load_dotenv
 from werkzeug.utils import secure_filename
+from io import BytesIO
+
+from openai import OpenAI
+
 
 load_dotenv()
 
@@ -13,6 +17,9 @@ CORS(app)
 openai_api_key = os.getenv("OPENAI_API_KEY")
 pipeline = None  # Global variable to hold the pipeline instance
 messages = []  # In-memory storage for messages
+
+# Probably will move to other files
+client = OpenAI()
 
 
 @app.route("/upload-csv", methods=["POST"])
@@ -39,6 +46,7 @@ def chat():
     global pipeline, messages
     data = request.json
     user_prompt = data["user_prompt"]
+    print(f"User prompt: {user_prompt}")
 
     if pipeline and openai_api_key:
         response = pipeline.run_full_chain(user_prompt)
@@ -51,6 +59,35 @@ def chat():
             jsonify({"error": "Pipeline not initialized or OpenAI API key missing."}),
             400,
         )
+
+
+@app.route("/api/transcribe", methods=["POST"])
+def transcribe_audio():
+    if "audio" in request.files:
+        audio_file = request.files["audio"]
+        try:
+            # Wrap the file content in a BytesIO object
+            audio_bytes_io = BytesIO(audio_file.read())
+
+            # Prepare the tuple (filename, file-like object, content_type)
+            file_tuple = ("audio.webm", audio_bytes_io, "audio/webm")
+
+            # Pass the tuple to the transcription API
+            transcription = client.audio.transcriptions.create(
+                model="whisper-1", file=file_tuple
+            )
+
+            print(f"Text: {transcription.text}")
+
+            # get_response(transcription.text)
+
+            return jsonify({"text": transcription.text}), 200
+
+        except Exception as e:
+            print("An error occurred: ", str(e))
+            return jsonify({"error": "An error occurred during transcription"}), 500
+    else:
+        return jsonify({"error": "No audio file found in request"}), 400
 
 
 @app.route("/get-messages", methods=["GET"])
