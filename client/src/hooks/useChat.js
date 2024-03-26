@@ -1,3 +1,4 @@
+import axios from 'axios';
 import { useState } from 'react';
 
 function useChat(setIsLoading) {
@@ -5,7 +6,6 @@ function useChat(setIsLoading) {
 
   const sendMessage = async (text) => {
     setIsLoading(true);
-
     try {
       const response = await axios.post('http://localhost:5000/chat', {
         user_prompt: text,
@@ -19,25 +19,29 @@ function useChat(setIsLoading) {
   };
 
   const transcribeAndSend = async (recordingBlob) => {
-    setIsLoading(true);
+    setIsLoading(true); // Ensure loading is true at the start of the operation
 
     if (recordingBlob) {
       const formData = new FormData();
       formData.append("audio", recordingBlob, "recording.webm");
 
-      axios.post('http://localhost:5000/api/transcribe', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
-      }).then(response => {
+      try {
+        const response = await axios.post('http://localhost:5000/api/transcribe', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        });
         const transcript = response.data.text;
-        sendMessage(transcript);
-      }).catch(error => {
+        console.log("Transcript", transcript)
+        await sendMessage(transcript); // Wait for sendMessage to complete
+      } catch (error) {
         console.error('Error sending audio to the server:', error);
-      });
+      } finally {
+        setIsLoading(false); // Set loading to false once all operations are complete
+      }
+    } else {
+      setIsLoading(false); // Ensure loading is false if there is no recordingBlob
     }
-
-    setIsLoading(false);
   };
 
   return { messages, sendMessage, transcribeAndSend };

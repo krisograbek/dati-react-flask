@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import axios from 'axios';
 
 import theme from './styles/theme';
@@ -22,18 +22,13 @@ import StyledSendButton from './components/styled/StyledSendButton';
 import useChat from './hooks/useChat';
 
 function App() {
-  const [inputValue, setInputValue] = useState('');
   const [isFileUploaded, setIsFileUploaded] = useState(false);
+  const [uploadingFile, setUploadingFile] = useState(false);
+
+  const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { startRecording, stopRecording, recordingBlob, isRecording } = useAudioRecorder();
   const { messages, sendMessage, transcribeAndSend } = useChat(setIsLoading);
-
-  useEffect(() => {
-    // This effect listens for a change in `recordingBlob` and triggers the transcription and sending logic.
-    if (recordingBlob) {
-      transcribeAndSend(recordingBlob);
-    }
-  }, [recordingBlob, transcribeAndSend]);
 
   const handleSendMessage = () => {
     if (inputValue.trim()) {
@@ -42,10 +37,35 @@ function App() {
     }
   };
 
+  // Inside App.js
+  React.useEffect(() => {
+    const handleTranscription = async () => {
+      if (recordingBlob) {
+        console.log('Sending audio blob to the server', recordingBlob);
+        const formData = new FormData();
+        formData.append("audio", recordingBlob, "recording.webm");
+
+        try {
+          const response = await axios.post('http://localhost:5000/api/transcribe', formData, {
+            headers: {
+              'Content-Type': 'multipart/form-data'
+            }
+          });
+          console.log(response.data);
+          // Once transcription is received, use it to send the message
+          sendMessage(response.data.text);
+        } catch (error) {
+          console.error('Error sending audio to the server:', error);
+        }
+      }
+    };
+
+    handleTranscription();
+  }, [recordingBlob, sendMessage]);
+
   const handleStopRecording = () => {
     stopRecording();
   };
-
 
   const handleFileUpload = async (event) => {
     setUploadingFile(true);
