@@ -19,31 +19,35 @@ import { ThemeProvider } from 'styled-components';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCircleStop, faMicrophone } from '@fortawesome/free-solid-svg-icons';
 import StyledSendButton from './components/styled/StyledSendButton';
-import useChat from './hooks/useChat';
+import { useMessageHandler } from './hooks/useMessageHandler';
+import { useAudioTranscriber } from './hooks/useAudioTranscriber';
 
 function App() {
   const [inputValue, setInputValue] = useState('');
   const [isFileUploaded, setIsFileUploaded] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const { startRecording, stopRecording, recordingBlob, isRecording } = useAudioRecorder();
-  const { messages, sendMessage, transcribeAndSend } = useChat(setIsLoading);
+  const [uploadingFile, setUploadingFile] = useState(false);
+  const [isTranscriptionReady, setIsTranscriptionReady] = useState(false);
 
-  useEffect(() => {
-    // This effect listens for a change in `recordingBlob` and triggers the transcription and sending logic.
-    if (recordingBlob) {
-      transcribeAndSend(recordingBlob);
-    }
-  }, [recordingBlob, transcribeAndSend]);
-
-  const handleSendMessage = () => {
-    if (inputValue.trim()) {
-      sendMessage(inputValue);
-      setInputValue(''); // Clear input field after sending
-    }
-  };
+  // from custom hooks
+  const { messages, sendMessage, isLoading } = useMessageHandler();
+  //react audio voice recorder hook
+  const {
+    startRecording,
+    stopRecording,
+    recordingBlob,
+    isRecording
+  } = useAudioRecorder();
 
   const handleStopRecording = () => {
     stopRecording();
+    setIsTranscriptionReady(true)
+  };
+
+  useAudioTranscriber(recordingBlob, sendMessage, isTranscriptionReady, setIsTranscriptionReady);
+
+  const handleSendMessage = () => {
+    sendMessage(inputValue); // Use the sendMessage for user typed input
+    setInputValue(''); // Clear the input field after sending
   };
 
 
