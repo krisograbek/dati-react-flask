@@ -29,7 +29,7 @@ function App() {
   const [isLoading, setIsLoading] = useState(false);
   const { startRecording, stopRecording, recordingBlob, isRecording } = useAudioRecorder();
 
-  const [lastBlob, setLastBlob] = useState(null); // Stores the last recorded blob
+  const [lastBlob, setLastBlob] = useState(null);
 
   // Function to send text to /chat endpoint
   const handleSendMessage = useCallback(async (text) => {
@@ -39,7 +39,7 @@ function App() {
         user_prompt: text,
       });
       setMessages(response.data.messages);
-      setInputValue(''); // Reset input value after sending
+      setInputValue('');
     } catch (error) {
       console.error("Failed to send message:", error);
     } finally {
@@ -85,42 +85,6 @@ function App() {
   }, [isRecording, recordingBlob]);
 
 
-  const sendMessage = async (content) => {
-    setIsLoading(true);
-    try {
-      const response = await axios.post('http://localhost:5000/chat', { user_prompt: content });
-      setMessages(response.data.messages); // Assuming the backend returns the updated list of messages
-    } catch (error) {
-      console.error('Error sending message:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleVoiceInput = async () => {
-    if (recordingBlob && !isLoading) {
-      console.log('Processing new blob:', recordingBlob);
-      setIsLoading(true);
-      const formData = new FormData();
-      formData.append("audio", recordingBlob, "recording.webm");
-
-      try {
-        const response = await axios.post('http://localhost:5000/api/transcribe', formData, {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-        });
-        const transcript = response.data.text;
-        console.log("Transcript:", transcript);
-        await sendMessage(transcript);
-      } catch (error) {
-        console.error('Error transcribing message:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-  };
-
   const handleStopRecording = () => {
     stopRecording();
   };
@@ -133,7 +97,7 @@ function App() {
     try {
       const response = await axios.post('http://localhost:5000/upload-csv', formData);
       if (response.status === 200) {
-        // setMessages([]); // Clear messages in the front-end state
+        setMessages([]); // Clear messages in the front-end state
         setIsFileUploaded(true);
       }
     } catch (error) {
@@ -142,7 +106,6 @@ function App() {
       setUploadingFile(false);
     }
   };
-
 
   return (
     <ThemeProvider theme={theme}>
