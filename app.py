@@ -5,6 +5,7 @@ from chatbot_pipeline import ChatbotPipeline
 from dotenv import load_dotenv
 from werkzeug.utils import secure_filename
 from io import BytesIO
+from datetime import datetime
 
 from openai import OpenAI
 
@@ -89,6 +90,28 @@ def transcribe_audio():
             return jsonify({"error": "An error occurred during transcription"}), 500
     else:
         return jsonify({"error": "No audio file found in request"}), 400
+
+
+@app.route("/synthesize", methods=["POST"])
+def synthesize_audio():
+    client = OpenAI()
+    data = request.json
+    text = data["text"]
+    print(f"Received text to synthesize: {text}")
+
+    audio = client.audio.speech.create(
+        model="tts-1",
+        voice="alloy",
+        input=text,
+    )
+
+    audio_filename = datetime.now().strftime("%Y%m%d_%H%M%S") + ".mp3"
+
+    audio_url = os.path.join("static", "audio", audio_filename)
+    audio.stream_to_file(audio_url)
+    print(type(audio), audio)
+
+    return jsonify({"audio_url": audio_url}), 200
 
 
 @app.route("/get-messages", methods=["GET"])

@@ -5,6 +5,7 @@ __pycache__
 
 .env
 *.db
+*.mp3
 
 # initial front-end
 frontend

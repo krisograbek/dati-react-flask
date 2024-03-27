@@ -20,6 +20,8 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCircleStop, faMicrophone } from '@fortawesome/free-solid-svg-icons';
 import StyledSendButton from './components/styled/StyledSendButton';
 
+const host = "http://localhost:5000/"
+
 function App() {
   const [isFileUploaded, setIsFileUploaded] = useState(false);
   const [uploadingFile, setUploadingFile] = useState(false);
@@ -29,17 +31,36 @@ function App() {
   const [isLoading, setIsLoading] = useState(false);
   const { startRecording, stopRecording, recordingBlob, isRecording } = useAudioRecorder();
 
-  const [lastBlob, setLastBlob] = useState(null); // Stores the last recorded blob
+
+  const [synthesizeResponse, setSynthesizeResponse] = useState(false); // User's choice for audio synthesis
+  const [lastBlob, setLastBlob] = useState(null);
 
   // Function to send text to /chat endpoint
-  const handleSendMessage = useCallback(async (text) => {
+  const handleSendMessage = useCallback(async (text, shouldSynthesize) => {
+    const userMessage = { role: 'user', content: text };
+    // Optimistically update UI with the user's message
+    setMessages((prevMessages) => [...prevMessages, userMessage]);
     setIsLoading(true);
     try {
       const response = await axios.post('http://localhost:5000/chat', {
         user_prompt: text,
       });
-      setMessages(response.data.messages);
-      setInputValue(''); // Reset input value after sending
+      const assistantMessage = { "role": "assistant", "content": response.data.response }
+      console.log("First response", assistantMessage)
+
+      if (shouldSynthesize) {
+        console.log("Am I getting here?")
+        // Assuming the backend expects text and returns a URL to the mp3
+        const synthesisResponse = await axios.post('http://localhost:5000/synthesize', {
+          text: assistantMessage.content,
+        });
+        const audioUrl = host + synthesisResponse.data.audio_url; // Adjust according to your response structure
+        console.log("Receiving audio url", audioUrl)
+        assistantMessage.audioUrl = audioUrl; // Add the audioUrl to the assistant message
+      }
+
+      setMessages((prevMessages) => [...prevMessages, assistantMessage]);
+      setInputValue('');
     } catch (error) {
       console.error("Failed to send message:", error);
     } finally {
@@ -64,7 +85,7 @@ function App() {
           });
           const transcript = response.data.text;
           console.log("Transcript:", transcript);
-          await handleSendMessage(transcript);
+          await handleSendMessage(transcript, synthesizeResponse);
           // await sendMessage(transcript);
         } catch (error) {
           console.error('Error transcribing message:', error);
@@ -85,42 +106,6 @@ function App() {
   }, [isRecording, recordingBlob]);
 
 
-  const sendMessage = async (content) => {
-    setIsLoading(true);
-    try {
-      const response = await axios.post('http://localhost:5000/chat', { user_prompt: content });
-      setMessages(response.data.messages); // Assuming the backend returns the updated list of messages
-    } catch (error) {
-      console.error('Error sending message:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleVoiceInput = async () => {
-    if (recordingBlob && !isLoading) {
-      console.log('Processing new blob:', recordingBlob);
-      setIsLoading(true);
-      const formData = new FormData();
-      formData.append("audio", recordingBlob, "recording.webm");
-
-      try {
-        const response = await axios.post('http://localhost:5000/api/transcribe', formData, {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-        });
-        const transcript = response.data.text;
-        console.log("Transcript:", transcript);
-        await sendMessage(transcript);
-      } catch (error) {
-        console.error('Error transcribing message:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-  };
-
   const handleStopRecording = () => {
     stopRecording();
   };
@@ -133,7 +118,7 @@ function App() {
     try {
       const response = await axios.post('http://localhost:5000/upload-csv', formData);
       if (response.status === 200) {
-        // setMessages([]); // Clear messages in the front-end state
+        setMessages([]); // Clear messages in the front-end state
         setIsFileUploaded(true);
       }
     } catch (error) {
@@ -143,7 +128,6 @@ function App() {
     }
   };
 
-
   return (
     <ThemeProvider theme={theme}>
       <GlobalStyle />
@@ -151,10 +135,19 @@ function App() {
         <Header>Query Assistant</Header>
         <MessageList>
           {messages.map((msg, index) => (
-            <MessageItem key={index} isUser={msg.role === 'user'}>
-              {msg.content}
-            </MessageItem>
+            <React.Fragment key={index}>
+              <MessageItem isUser={msg.role === 'user'}>
+                {msg.content}
+              </MessageItem>
+              {msg.audioUrl && (
+                <audio controls autoPlay>
+                  <source src={msg.audioUrl} type="audio/mpeg" />
+                  Your browser does not support the audio element.
+                </audio>
+              )}
+            </React.Fragment>
           ))}
+
         </MessageList>
         <div style={{ display: 'flex', alignItems: 'center', padding: '10px' }}>
           <Tooltip text="Upload your CSV file here to start the chat.">
@@ -164,12 +157,12 @@ function App() {
           <InputArea
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleSendMessage(inputValue)}
+            onKeyDown={(e) => e.key === 'Enter' && handleSendMessage(inputValue, synthesizeResponse)}
             disabled={!isFileUploaded}
             placeholder={isFileUploaded ? 'Ask me about your data...' : ''}
           />
 
-          <SendButton handleSendMessage={() => handleSendMessage(inputValue)} isDisabled={!isFileUploaded || isLoading} isLoading={isLoading} />
+          <SendButton handleSendMessage={() => handleSendMessage(inputValue, synthesizeResponse)} isDisabled={!isFileUploaded || isLoading} isLoading={isLoading} />
           <StyledSendButton onClick={isRecording ? handleStopRecording : startRecording} disabled={!isFileUploaded || isLoading}>
             <FontAwesomeIcon icon={isRecording ? faCircleStop : faMicrophone} />
           </StyledSendButton>
@@ -177,6 +170,15 @@ function App() {
         <StatusBar isFileUploaded={isFileUploaded}>
           {!isFileUploaded && 'Please upload a CSV file to use the chat.'}
         </StatusBar>
+        <label>
+          <input
+            type="checkbox"
+            checked={synthesizeResponse}
+            onChange={(e) => setSynthesizeResponse(e.target.checked)}
+          />
+          Synthesize response into audio
+        </label>
+
       </ChatContainer >
     </ThemeProvider>
   );
