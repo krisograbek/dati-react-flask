@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import axios from 'axios';
 
 import theme from './styles/theme';
@@ -19,49 +19,105 @@ import { ThemeProvider } from 'styled-components';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCircleStop, faMicrophone } from '@fortawesome/free-solid-svg-icons';
 import StyledSendButton from './components/styled/StyledSendButton';
-import useChat from './hooks/useChat';
 
 function App() {
   const [isFileUploaded, setIsFileUploaded] = useState(false);
   const [uploadingFile, setUploadingFile] = useState(false);
 
   const [inputValue, setInputValue] = useState('');
+  const [messages, setMessages] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const { startRecording, stopRecording, recordingBlob, isRecording } = useAudioRecorder();
-  const { messages, sendMessage, transcribeAndSend } = useChat(setIsLoading);
 
-  const handleSendMessage = () => {
-    if (inputValue.trim()) {
-      sendMessage(inputValue);
-      setInputValue(''); // Clear input field after sending
+  const [lastBlob, setLastBlob] = useState(null); // Stores the last recorded blob
+
+  // Function to send text to /chat endpoint
+  const handleSendMessage = useCallback(async (text) => {
+    setIsLoading(true);
+    try {
+      const response = await axios.post('http://localhost:5000/chat', { user_prompt: content });
+      setMessages(response.data.messages);
+      setInputValue(''); // Reset input value after sending
+    } catch (error) {
+      console.error("Failed to send message:", error);
+    } finally {
+      setIsLoading(false);
     }
-  };
+  }, []);
 
-  // Inside App.js
-  React.useEffect(() => {
-    const handleTranscription = async () => {
-      if (recordingBlob) {
-        console.log('Sending audio blob to the server', recordingBlob);
+  // Effect hook to manage sending the recording for transcription and then sending to chat
+  useEffect(() => {
+    const transcribeAudio = async () => {
+      if (recordingBlob && !isLoading) {
+        console.log('Processing new blob:', recordingBlob);
+        setIsLoading(true);
         const formData = new FormData();
         formData.append("audio", recordingBlob, "recording.webm");
 
         try {
           const response = await axios.post('http://localhost:5000/api/transcribe', formData, {
             headers: {
-              'Content-Type': 'multipart/form-data'
-            }
+              'Content-Type': 'multipart/form-data',
+            },
           });
-          console.log(response.data);
-          // Once transcription is received, use it to send the message
-          sendMessage(response.data.text);
+          const transcript = response.data.text;
+          console.log("Transcript:", transcript);
+          await handleSendMessage(transcribedText);
+          // await sendMessage(transcript);
         } catch (error) {
-          console.error('Error sending audio to the server:', error);
+          console.error('Error transcribing message:', error);
+        } finally {
+          setIsLoading(false);
         }
       }
     };
 
-    handleTranscription();
-  }, [recordingBlob, sendMessage]);
+    transcribeAudio();
+  }, [lastBlob, handleSendMessage]);
+
+  // Use effect to handle start and stop of recording
+  useEffect(() => {
+    if (!isRecording && recordingBlob) {
+      setLastBlob(recordingBlob); // Update lastBlob when recording stops
+    }
+  }, [isRecording, recordingBlob]);
+
+
+  const sendMessage = async (content) => {
+    setIsLoading(true);
+    try {
+      const response = await axios.post('http://localhost:5000/chat', { user_prompt: content });
+      setMessages(response.data.messages); // Assuming the backend returns the updated list of messages
+    } catch (error) {
+      console.error('Error sending message:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleVoiceInput = async () => {
+    if (recordingBlob && !isLoading) {
+      console.log('Processing new blob:', recordingBlob);
+      setIsLoading(true);
+      const formData = new FormData();
+      formData.append("audio", recordingBlob, "recording.webm");
+
+      try {
+        const response = await axios.post('http://localhost:5000/api/transcribe', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        });
+        const transcript = response.data.text;
+        console.log("Transcript:", transcript);
+        await sendMessage(transcript);
+      } catch (error) {
+        console.error('Error transcribing message:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+  };
 
   const handleStopRecording = () => {
     stopRecording();
