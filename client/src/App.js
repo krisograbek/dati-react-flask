@@ -35,7 +35,9 @@ function App() {
   const handleSendMessage = useCallback(async (text) => {
     setIsLoading(true);
     try {
-      const response = await axios.post('http://localhost:5000/chat', { user_prompt: content });
+      const response = await axios.post('http://localhost:5000/chat', {
+        user_prompt: text,
+      });
       setMessages(response.data.messages);
       setInputValue(''); // Reset input value after sending
     } catch (error) {
@@ -62,7 +64,7 @@ function App() {
           });
           const transcript = response.data.text;
           console.log("Transcript:", transcript);
-          await handleSendMessage(transcribedText);
+          await handleSendMessage(transcript);
           // await sendMessage(transcript);
         } catch (error) {
           console.error('Error transcribing message:', error);
@@ -162,12 +164,12 @@ function App() {
           <InputArea
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
+            onKeyDown={(e) => e.key === 'Enter' && handleSendMessage(inputValue)}
             disabled={!isFileUploaded}
             placeholder={isFileUploaded ? 'Ask me about your data...' : ''}
           />
 
-          <SendButton handleSendMessage={handleSendMessage} isDisabled={!isFileUploaded || isLoading} isLoading={isLoading} />
+          <SendButton handleSendMessage={() => handleSendMessage(inputValue)} isDisabled={!isFileUploaded || isLoading} isLoading={isLoading} />
           <StyledSendButton onClick={isRecording ? handleStopRecording : startRecording} disabled={!isFileUploaded || isLoading}>
             <FontAwesomeIcon icon={isRecording ? faCircleStop : faMicrophone} />
           </StyledSendButton>

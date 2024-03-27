@@ -45,6 +45,7 @@ def upload_csv():
 def chat():
     global pipeline, messages
     data = request.json
+    print(f"data: {data}")
     user_prompt = data["user_prompt"]
     print(f"User prompt: {user_prompt}")
 
