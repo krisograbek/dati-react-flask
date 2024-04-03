@@ -32,7 +32,7 @@ function App() {
   const { startRecording, stopRecording, recordingBlob, isRecording } = useAudioRecorder();
 
 
-  const [synthesizeResponse, setSynthesizeResponse] = useState(false); // User's choice for audio synthesis
+  const [synthesizeResponse, setSynthesizeResponse] = useState(true); // User's choice for audio synthesis
   const [lastBlob, setLastBlob] = useState(null);
 
   // Function to send text to /chat endpoint
@@ -170,14 +170,14 @@ function App() {
         <StatusBar isFileUploaded={isFileUploaded}>
           {!isFileUploaded && 'Please upload a CSV file to use the chat.'}
         </StatusBar>
-        <label>
+        {/* <label>
           <input
             type="checkbox"
             checked={synthesizeResponse}
             onChange={(e) => setSynthesizeResponse(e.target.checked)}
           />
           Synthesize response into audio
-        </label>
+        </label> */}
 
       </ChatContainer >
     </ThemeProvider>
