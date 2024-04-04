@@ -26,7 +26,7 @@ import {
   uploadFile
 } from './services/api';
 
-const host = process.env.NODE_ENV === 'development' ? "http://localhost:5000/" : "http://localhost:8000/";
+// const host = process.env.NODE_ENV === 'development' ? "http://localhost:5000/" : "http://localhost:8000/";
 
 
 function App() {
@@ -59,7 +59,8 @@ function App() {
         console.log("Am I getting here?")
         // Assuming the backend expects text and returns a URL to the mp3
         const synthesisResponse = await synthesizeMessage(assistantMessage.content);
-        const audioUrl = host + synthesisResponse.data.audio_url; // Adjust according to your response structure
+        // const audioUrl = host + synthesisResponse.data.audio_url; // Adjust according to your response structure
+        const audioUrl = synthesisResponse.data.audio_url; // Adjust according to your response structure
         console.log("Receiving audio url", audioUrl)
         assistantMessage.audioUrl = audioUrl; // Add the audioUrl to the assistant message
       }
