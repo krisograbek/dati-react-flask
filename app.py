@@ -1,5 +1,5 @@
 import os
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, jsonify, render_template, send_from_directory, url_for
 from flask_cors import CORS
 from chatbot_pipeline import ChatbotPipeline
 from dotenv import load_dotenv
@@ -14,9 +14,9 @@ load_dotenv()
 
 app = Flask(
     __name__,
-    # static_url_path="",
-    # static_folder="./client/build",
-    # template_folder="./client/build",
+    static_url_path="",
+    static_folder="./client/build",
+    template_folder="./client/build",
 )
 
 CORS(app)
@@ -103,6 +103,15 @@ def transcribe_audio():
         return jsonify({"error": "No audio file found in request"}), 400
 
 
+# Assuming you're saving your mp3 files in './dynamic/audio'
+DYNAMIC_FOLDER = os.path.join(os.getcwd(), "dynamic", "audio")
+
+
+@app.route("/dynamic/audio/<filename>")
+def dynamic_audio(filename):
+    return send_from_directory(DYNAMIC_FOLDER, filename)
+
+
 @app.route("/synthesize", methods=["POST"])
 def synthesize_audio():
     client = OpenAI()
@@ -118,11 +127,15 @@ def synthesize_audio():
 
     audio_filename = datetime.now().strftime("%Y%m%d_%H%M%S") + ".mp3"
 
-    audio_url = os.path.join("static", "audio", audio_filename)
-    audio.stream_to_file(audio_url)
-    print(type(audio), audio)
+    audio_url = os.path.join("dynamic", "audio", audio_filename)
+    full_audio_path = os.path.join(os.getcwd(), audio_url)
+    audio.stream_to_file(full_audio_path)
 
-    return jsonify({"audio_url": audio_url}), 200
+    print(type(audio), audio)
+    # Update the response to use the new URL
+    dynamic_audio_url = url_for("dynamic_audio", filename=audio_filename)
+    return jsonify({"audio_url": dynamic_audio_url}), 200
+    # return jsonify({"audio_url": audio_url}), 200
 
 
 @app.route("/get-messages", methods=["GET"])

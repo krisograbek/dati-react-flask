@@ -1,5 +1,4 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import axios from 'axios';
 
 import theme from './styles/theme';
 import GlobalStyle from './styles/GlobalStyle';
@@ -20,8 +19,12 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCircleStop, faMicrophone } from '@fortawesome/free-solid-svg-icons';
 import StyledSendButton from './components/styled/StyledSendButton';
 
-import { sendMessage, synthesizeMessage, transcribeAudio, uploadFile } from './services/api'; // Adjust the import path according to your structure
-
+import {
+  sendMessage,
+  synthesizeMessage,
+  transcribeAudio,
+  uploadFile
+} from './services/api';
 
 const host = process.env.NODE_ENV === 'development' ? "http://localhost:5000/" : "http://localhost:8000/";
 
@@ -45,6 +48,7 @@ function App() {
     // Optimistically update UI with the user's message
     setMessages((prevMessages) => [...prevMessages, userMessage]);
     setIsLoading(true);
+    setInputValue('');
     try {
       const response = await sendMessage(text);
       const assistantMessage = { "role": "assistant", "content": response.data.response }
@@ -60,7 +64,6 @@ function App() {
       }
 
       setMessages((prevMessages) => [...prevMessages, assistantMessage]);
-      setInputValue('');
     } catch (error) {
       console.error("Failed to send message:", error);
     } finally {
