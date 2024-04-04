@@ -1,5 +1,5 @@
 import os
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
 from chatbot_pipeline import ChatbotPipeline
 from dotenv import load_dotenv
@@ -12,7 +12,13 @@ from openai import OpenAI
 
 load_dotenv()
 
-app = Flask(__name__)
+app = Flask(
+    __name__,
+    # static_url_path="",
+    # static_folder="./client/build",
+    # template_folder="./client/build",
+)
+
 CORS(app)
 
 openai_api_key = os.getenv("OPENAI_API_KEY")
@@ -21,6 +27,11 @@ messages = []  # In-memory storage for messages
 
 # Probably will move to other files
 client = OpenAI()
+
+
+@app.errorhandler(404)
+def not_found(e):
+    return render_template("index.html")
 
 
 @app.route("/upload-csv", methods=["POST"])

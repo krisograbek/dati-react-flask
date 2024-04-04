@@ -20,7 +20,11 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCircleStop, faMicrophone } from '@fortawesome/free-solid-svg-icons';
 import StyledSendButton from './components/styled/StyledSendButton';
 
-const host = "http://localhost:5000/"
+import { sendMessage, synthesizeMessage, transcribeAudio, uploadFile } from './services/api'; // Adjust the import path according to your structure
+
+
+const host = process.env.NODE_ENV === 'development' ? "http://localhost:5000/" : "http://localhost:8000/";
+
 
 function App() {
   const [isFileUploaded, setIsFileUploaded] = useState(false);
@@ -42,18 +46,14 @@ function App() {
     setMessages((prevMessages) => [...prevMessages, userMessage]);
     setIsLoading(true);
     try {
-      const response = await axios.post('http://localhost:5000/chat', {
-        user_prompt: text,
-      });
+      const response = await sendMessage(text);
       const assistantMessage = { "role": "assistant", "content": response.data.response }
       console.log("First response", assistantMessage)
 
       if (shouldSynthesize) {
         console.log("Am I getting here?")
         // Assuming the backend expects text and returns a URL to the mp3
-        const synthesisResponse = await axios.post('http://localhost:5000/synthesize', {
-          text: assistantMessage.content,
-        });
+        const synthesisResponse = await synthesizeMessage(assistantMessage.content);
         const audioUrl = host + synthesisResponse.data.audio_url; // Adjust according to your response structure
         console.log("Receiving audio url", audioUrl)
         assistantMessage.audioUrl = audioUrl; // Add the audioUrl to the assistant message
@@ -70,7 +70,7 @@ function App() {
 
   // Effect hook to manage sending the recording for transcription and then sending to chat
   useEffect(() => {
-    const transcribeAudio = async () => {
+    const transcribeAudioEffect = async () => {
       if (recordingBlob && !isLoading) {
         console.log('Processing new blob:', recordingBlob);
         setIsLoading(true);
@@ -78,11 +78,7 @@ function App() {
         formData.append("audio", recordingBlob, "recording.webm");
 
         try {
-          const response = await axios.post('http://localhost:5000/api/transcribe', formData, {
-            headers: {
-              'Content-Type': 'multipart/form-data',
-            },
-          });
+          const response = await transcribeAudio(formData);
           const transcript = response.data.text;
           console.log("Transcript:", transcript);
           await handleSendMessage(transcript, synthesizeResponse);
@@ -95,7 +91,7 @@ function App() {
       }
     };
 
-    transcribeAudio();
+    transcribeAudioEffect();
   }, [lastBlob, handleSendMessage]);
 
   // Use effect to handle start and stop of recording
@@ -116,7 +112,7 @@ function App() {
     const formData = new FormData();
     formData.append('csv_file', file);
     try {
-      const response = await axios.post('http://localhost:5000/upload-csv', formData);
+      const response = await uploadFile(formData);
       if (response.status === 200) {
         setMessages([]); // Clear messages in the front-end state
         setIsFileUploaded(true);
