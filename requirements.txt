@@ -5,3 +5,4 @@ Flask-Cors
 langchain-openai
 python-dotenv
 sqlalchemy
+gunicorn
