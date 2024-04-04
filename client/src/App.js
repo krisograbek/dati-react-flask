@@ -39,7 +39,8 @@ function App() {
   const { startRecording, stopRecording, recordingBlob, isRecording } = useAudioRecorder();
 
 
-  const [synthesizeResponse, setSynthesizeResponse] = useState(true); // User's choice for audio synthesis
+  // const [synthesizeResponse, setSynthesizeResponse] = useState(true); // User's choice for audio synthesis
+  const synthesizeResponse = true; // User's choice for audio synthesis
   const [lastBlob, setLastBlob] = useState(null);
 
   // Function to send text to /chat endpoint
