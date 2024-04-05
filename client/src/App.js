@@ -40,7 +40,7 @@ function App() {
 
 
   // const [synthesizeResponse, setSynthesizeResponse] = useState(true); // User's choice for audio synthesis
-  const synthesizeResponse = false; // User's choice for audio synthesis
+  const synthesizeResponse = true; // User's choice for audio synthesis
   const [lastBlob, setLastBlob] = useState(null);
 
   // Function to send text to /chat endpoint
